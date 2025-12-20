@@ -254,6 +254,14 @@ export class GeminiLiveAPI {
     // console.log("Message received: ", messageEvent);
     const messageData = JSON.parse(messageEvent.data);
     const message = new MultimodalLiveResponseMessage(messageData);
+
+    // Only set connected=true after setup is complete
+    if (message.type === MultimodalLiveResponseType.SETUP_COMPLETE) {
+      console.log("✅ Setup complete - connection ready");
+      this.connected = true;
+      this.onConnectionStarted();
+    }
+
     this.onReceiveResponse(message);
   }
 
@@ -276,10 +284,9 @@ export class GeminiLiveAPI {
 
     this.webSocket.onopen = (event) => {
       console.log("websocket open: ", event);
-      this.connected = true;
+      // Don't set connected=true yet - wait for SETUP_COMPLETE
       this.totalBytesSent = 0;
       this.sendInitialSetupMessages();
-      this.onConnectionStarted();
     };
 
     this.webSocket.onmessage = this.onReceiveMessage.bind(this);
