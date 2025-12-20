@@ -13,6 +13,17 @@ This plan addresses connection stability issues in the Gaming Assistant demo, ta
   - Wired up error callbacks (onClose, onErrorMessage) with proper cleanup
   - Build verified successful with no errors
 
+### Critical Bug Fixes (Post-Phase 1)
+- ✅ **Bug Fix 1.3: Missing Project ID Configuration UI** - COMPLETED
+  - Added configuration dropdown with Project ID input field
+  - Users can now enter Google Cloud Project ID via UI
+  - Input disabled while connected (must disconnect to change)
+
+- ✅ **Bug Fix 1.4: React Closure Bug in Media Cleanup** - COMPLETED
+  - Fixed stale closure in onClose callback
+  - Media streams now properly stop on disconnect
+  - Uses refs instead of state flags for cleanup logic
+
 ### Partially Complete
 - 🔄 **Phase 2: Connection State Management** - 1/2 complete
   - ✅ Fixed race condition in gemini-api.js (connected flag now set after SETUP_COMPLETE)
@@ -108,6 +119,134 @@ client.onErrorMessage = (message) => {
 - [ ] Verify UI updates to disconnected state
 - [ ] Verify media streams stop automatically
 - [ ] Check that error alerts appear
+
+---
+
+### 1.3 Add Project ID Configuration UI ✅ COMPLETED
+**Priority**: 🔴 CRITICAL - Users can't connect without this
+
+**Issue Discovered**:
+- App.jsx referenced "Configuration dropdown" but no UI existed
+- No way for users to enter Google Cloud Project ID
+- Connection would fail with alert but no way to fix it
+
+**Implementation Complete** (src/App.jsx):
+```javascript
+// Added state
+const [projectId, setProjectId] = useState("");
+const [showConfig, setShowConfig] = useState(false);
+
+// Added handler
+const handleProjectIdChange = (e) => {
+  const newProjectId = e.target.value;
+  setProjectId(newProjectId);
+  if (liveAPIRef.current) {
+    liveAPIRef.current.setConfig({
+      projectId: newProjectId,
+    });
+  }
+};
+
+// Added UI (lines 125-161)
+<details open={showConfig}>
+  <summary>Configuration {showConfig ? '▼' : '▶'}</summary>
+  <div>
+    <label>Google Cloud Project ID:</label>
+    <input
+      type="text"
+      value={projectId}
+      onChange={handleProjectIdChange}
+      disabled={connected}
+      placeholder="your-project-id"
+    />
+  </div>
+</details>
+```
+
+**Benefits**:
+- ✅ Users can now enter Project ID via UI
+- ✅ Configuration dropdown is collapsible
+- ✅ Input disabled while connected (prevents mid-connection changes)
+- ✅ Clear placeholder text guides users
+
+**Test Checklist**:
+- [ ] UI shows Project ID input field
+- [ ] Can type and set Project ID
+- [ ] Project ID passed to LiveAPIDemo component
+- [ ] Input disabled while connected
+
+---
+
+### 1.4 Fix React Closure Bug in Media Cleanup ✅ COMPLETED
+**Priority**: 🔴 CRITICAL - Media streams won't stop on disconnect
+
+**Issue Discovered**:
+- `onClose` callback set in useEffect with empty deps `[]`
+- Callback closure captured initial state values (false)
+- `isAudioStreaming` and `isScreenSharing` always false in callback
+- Media cleanup code never executed
+
+**Root Cause**:
+```javascript
+// BEFORE (Bug):
+useEffect(() => {
+  client.onClose = (event) => {
+    // ❌ BUG: isAudioStreaming is ALWAYS false here (stale closure)
+    if (isAudioStreaming && audioStreamerRef.current) {
+      audioStreamerRef.current.stop();
+    }
+  };
+}, []); // Empty deps = captures initial values
+```
+
+**Implementation Complete** (src/components/LiveAPIDemo.jsx lines 70-94):
+```javascript
+// AFTER (Fixed):
+client.onClose = (event) => {
+  console.log('🔌 Connection closed:', event);
+  setIsConnected(false);
+  onConnectionChange?.(false);
+
+  // Clean up media streams on disconnect
+  // Don't check state flags - they're stale in this closure
+  // Just check if the refs exist and stop them
+  if (audioStreamerRef.current) {
+    console.log('🛑 Stopping audio stream due to disconnect');
+    audioStreamerRef.current.stop();
+    audioStreamerRef.current = null;
+    setIsAudioStreaming(false);
+    onAudioStreamChange?.(false);
+  }
+
+  if (screenCaptureRef.current) {
+    console.log('🛑 Stopping screen capture due to disconnect');
+    screenCaptureRef.current.stop();
+    screenCaptureRef.current = null;
+    setIsScreenSharing(false);
+    onScreenShareChange?.(false);
+    onPreviewStreamChange?.(null);
+  }
+};
+```
+
+**Solution**:
+- ✅ Don't rely on state flags in the closure
+- ✅ Check if refs exist (refs always have current values)
+- ✅ Always attempt cleanup if refs are present
+- ✅ Clear refs after stopping to prevent double-stop
+- ✅ Added logging for debugging
+
+**Benefits**:
+- ✅ Media streams now properly stop on disconnect
+- ✅ No resource leaks (camera/mic turn off)
+- ✅ State stays synchronized
+- ✅ Works regardless of how connection closes
+
+**Test Checklist**:
+- [ ] Start audio streaming, kill server, verify mic stops
+- [ ] Start screen share, kill server, verify sharing stops
+- [ ] Monitor console for "🛑 Stopping..." messages
+- [ ] Verify camera light turns off after disconnect
 
 ---
 

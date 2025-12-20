@@ -73,14 +73,20 @@ const LiveAPIDemo = forwardRef((props, ref) => {
       onConnectionChange?.(false);
 
       // Clean up media streams on disconnect
-      if (isAudioStreaming && audioStreamerRef.current) {
+      // Don't check state flags - they're stale in this closure
+      // Just check if the refs exist and stop them
+      if (audioStreamerRef.current) {
+        console.log('🛑 Stopping audio stream due to disconnect');
         audioStreamerRef.current.stop();
+        audioStreamerRef.current = null;
         setIsAudioStreaming(false);
         onAudioStreamChange?.(false);
       }
 
-      if (isScreenSharing && screenCaptureRef.current) {
+      if (screenCaptureRef.current) {
+        console.log('🛑 Stopping screen capture due to disconnect');
         screenCaptureRef.current.stop();
+        screenCaptureRef.current = null;
         setIsScreenSharing(false);
         onScreenShareChange?.(false);
         onPreviewStreamChange?.(null);
