@@ -10,6 +10,8 @@ function App() {
   const [videoStream, setVideoStream] = useState(null);
   const videoRef = useRef(null);
   const [selectedPersona, setSelectedPersona] = useState(null);
+  const [projectId, setProjectId] = useState("");
+  const [showConfig, setShowConfig] = useState(false);
 
   const PERSONAS = [
     {
@@ -47,6 +49,16 @@ function App() {
       liveAPIRef.current.setConfig({
         systemInstructions: persona.instructions,
         voice: persona.voice,
+      });
+    }
+  };
+
+  const handleProjectIdChange = (e) => {
+    const newProjectId = e.target.value;
+    setProjectId(newProjectId);
+    if (liveAPIRef.current) {
+      liveAPIRef.current.setConfig({
+        projectId: newProjectId,
       });
     }
   };
@@ -113,9 +125,39 @@ function App() {
           <div className="onboarding-step">
             <h3>Step 1: Configure</h3>
             <p>
-              Start <code>server.py</code> locally, add your project ID in the
-              Configuration dropdown.
+              Start <code>server.py</code> locally, then enter your Google Cloud Project ID below.
             </p>
+            <details open={showConfig}>
+              <summary onClick={() => setShowConfig(!showConfig)} style={{cursor: 'pointer', marginBottom: '10px'}}>
+                Configuration {showConfig ? '▼' : '▶'}
+              </summary>
+              <div style={{padding: '10px', background: '#f5f5f5', borderRadius: '4px'}}>
+                <label htmlFor="projectId" style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>
+                  Google Cloud Project ID:
+                </label>
+                <input
+                  id="projectId"
+                  type="text"
+                  value={projectId}
+                  onChange={handleProjectIdChange}
+                  placeholder="your-project-id"
+                  disabled={connected}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    fontSize: '14px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                {connected && (
+                  <p style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>
+                    Disconnect to change Project ID
+                  </p>
+                )}
+              </div>
+            </details>
           </div>
           <div className="onboarding-step">
             <h3>Step 2: Choose Persona</h3>
