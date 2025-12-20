@@ -179,7 +179,8 @@ const LiveAPIDemo = forwardRef((props, ref) => {
         return;
       }
 
-      if (!config.projectId) {
+      // Check the client's projectId directly (not stale config state)
+      if (!geminiClientRef.current.projectId) {
         alert('Please enter your Google Cloud Project ID in the configuration dropdown');
         return;
       }
