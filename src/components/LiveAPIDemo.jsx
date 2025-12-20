@@ -18,7 +18,7 @@ const LiveAPIDemo = forwardRef((props, ref) => {
   const [config, setConfig] = useState({
     proxyUrl: 'ws://localhost:8080',
     projectId: '',
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-live-2.5-flash-native-audio',
     systemInstructions: 'You are a helpful gaming assistant.',
     voice: 'Puck',
   });
