@@ -146,7 +146,7 @@ export class GeminiLiveAPI {
       start_of_speech_sensitivity: "START_SENSITIVITY_UNSPECIFIED",
     };
 
-    this.apiHost = "us-central1-aiplatform.googleapis.com";
+    this.apiHost = "us-west1-aiplatform.googleapis.com";  // US West for lower latency
     this.serviceUrl = `wss://${this.apiHost}/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent`;
     this.connected = false;
     this.webSocket = null;

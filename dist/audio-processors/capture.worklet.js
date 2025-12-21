@@ -5,7 +5,7 @@
 class AudioCaptureProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
-    this.bufferSize = 4096;
+    this.bufferSize = 1024;  // Reduced from 4096 for lower latency (64ms vs 256ms)
     this.buffer = new Float32Array(this.bufferSize);
     this.bufferIndex = 0;
   }
